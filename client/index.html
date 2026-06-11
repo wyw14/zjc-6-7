@@ -10,6 +10,15 @@
   <div class="container">
     <h1>🃏 翻牌配对小游戏</h1>
     
+    <div class="mode-selector">
+      <label for="gameMode">游戏模式：</label>
+      <select id="gameMode" class="mode-select">
+        <option value="normal">🎮 普通模式 (8对)</option>
+        <option value="hard">🔥 困难模式 (12对)</option>
+        <option value="daily">📅 每日挑战</option>
+      </select>
+    </div>
+
     <div class="game-info">
       <div class="info-item">
         <span class="label">⏱️ 用时</span>
@@ -36,8 +45,10 @@
     <div id="winModal" class="modal hidden">
       <div class="modal-content">
         <h2>🎉 恭喜通关！</h2>
+        <p>游戏模式：<span id="finalMode">普通模式</span></p>
         <p>你的成绩：<span id="finalTime">00:00</span></p>
         <p>总步数：<span id="finalMoves">0</span></p>
+        <p>排名：<span id="finalRank">--</span></p>
         <div id="newAchievements" class="achievements-section hidden">
           <h3>🏅 解锁新成就</h3>
           <div id="newAchievementsList" class="achievements-list"></div>
@@ -54,6 +65,14 @@
     <div id="leaderboardModal" class="modal hidden">
       <div class="modal-content">
         <h2>🏆 排行榜</h2>
+        <div class="mode-selector">
+          <label for="leaderboardMode">查看：</label>
+          <select id="leaderboardMode" class="mode-select">
+            <option value="normal">🎮 普通模式</option>
+            <option value="hard">🔥 困难模式</option>
+            <option value="daily">📅 每日挑战</option>
+          </select>
+        </div>
         <ol id="leaderboardList" class="leaderboard-list"></ol>
         <button id="closeLeaderboardBtn" class="btn btn-secondary">关闭</button>
       </div>
@@ -75,12 +94,27 @@
               <span id="statTotalGames" class="stat-value">0</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">最佳用时</span>
-              <span id="statBestTime" class="stat-value">--</span>
+              <span class="stat-label">困难场次</span>
+              <span id="statHardGames" class="stat-value">0</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">最少步数</span>
-              <span id="statBestMoves" class="stat-value">--</span>
+              <span class="stat-label">连续打卡</span>
+              <span id="statDailyStreak" class="stat-value">0天</span>
+            </div>
+          </div>
+          <h3 style="margin-top: 15px;">🎯 最佳记录</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">普通最佳</span>
+              <span id="statBestNormal" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">困难最佳</span>
+              <span id="statBestHard" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">每日最佳</span>
+              <span id="statBestDaily" class="stat-value">--</span>
             </div>
           </div>
         </div>

@@ -1,14 +1,21 @@
 const API_BASE_URL = 'http://localhost:6036/api';
 
 const CARD_EMOJIS = {
-  1: '🍎',
-  2: '🍊',
-  3: '🍋',
-  4: '🍇',
-  5: '🍓',
-  6: '🍒',
-  7: '🍑',
-  8: '🥝'
+  1: '🍎', 2: '🍊', 3: '🍋', 4: '🍇',
+  5: '🍓', 6: '🍒', 7: '🍑', 8: '🥝',
+  9: '🍌', 10: '🍉', 11: '🍍', 12: '🥭'
+};
+
+const MODE_NAMES = {
+  normal: '普通模式',
+  hard: '困难模式',
+  daily: '每日挑战'
+};
+
+const CARD_PAIRS = {
+  normal: 8,
+  hard: 12,
+  daily: 8
 };
 
 const gameBoard = document.getElementById('gameBoard');
@@ -18,25 +25,32 @@ const matchedEl = document.getElementById('matched');
 const restartBtn = document.getElementById('restartBtn');
 const leaderboardBtn = document.getElementById('leaderboardBtn');
 const profileBtn = document.getElementById('profileBtn');
+const gameModeSelect = document.getElementById('gameMode');
 const winModal = document.getElementById('winModal');
 const leaderboardModal = document.getElementById('leaderboardModal');
 const profileModal = document.getElementById('profileModal');
 const finalTimeEl = document.getElementById('finalTime');
 const finalMovesEl = document.getElementById('finalMoves');
+const finalModeEl = document.getElementById('finalMode');
+const finalRankEl = document.getElementById('finalRank');
 const playerNameInput = document.getElementById('playerName');
 const submitScoreBtn = document.getElementById('submitScoreBtn');
 const playAgainBtn = document.getElementById('playAgainBtn');
 const closeLeaderboardBtn = document.getElementById('closeLeaderboardBtn');
 const closeProfileBtn = document.getElementById('closeProfileBtn');
 const leaderboardList = document.getElementById('leaderboardList');
+const leaderboardModeSelect = document.getElementById('leaderboardMode');
 const newAchievementsSection = document.getElementById('newAchievements');
 const newAchievementsList = document.getElementById('newAchievementsList');
 const searchProfileBtn = document.getElementById('searchProfileBtn');
 const profilePlayerNameInput = document.getElementById('profilePlayerName');
 const profileStats = document.getElementById('profileStats');
 const statTotalGames = document.getElementById('statTotalGames');
-const statBestTime = document.getElementById('statBestTime');
-const statBestMoves = document.getElementById('statBestMoves');
+const statHardGames = document.getElementById('statHardGames');
+const statDailyStreak = document.getElementById('statDailyStreak');
+const statBestNormal = document.getElementById('statBestNormal');
+const statBestHard = document.getElementById('statBestHard');
+const statBestDaily = document.getElementById('statBestDaily');
 const profileAchievements = document.getElementById('profileAchievements');
 const profileAchievementsList = document.getElementById('profileAchievementsList');
 const achievementCount = document.getElementById('achievementCount');
@@ -50,10 +64,21 @@ let startTime = null;
 let elapsedTime = 0;
 let gameStarted = false;
 let isProcessing = false;
+let currentMode = 'normal';
+let currentCardPairs = 8;
 
 async function initGame() {
+  currentMode = gameModeSelect.value;
+  currentCardPairs = CARD_PAIRS[currentMode] || 8;
+  
+  if (currentMode === 'hard') {
+    gameBoard.classList.add('hard-mode');
+  } else {
+    gameBoard.classList.remove('hard-mode');
+  }
+  
   resetGameState();
-  const shuffledCards = await fetchShuffledCards();
+  const shuffledCards = await fetchShuffledCards(currentMode);
   renderCards(shuffledCards);
 }
 
@@ -73,19 +98,20 @@ function resetGameState() {
   
   updateTimerDisplay();
   movesEl.textContent = '0';
-  matchedEl.textContent = '0/8';
+  matchedEl.textContent = `0/${currentCardPairs}`;
   gameBoard.innerHTML = '';
 }
 
-async function fetchShuffledCards() {
+async function fetchShuffledCards(mode) {
   try {
-    const response = await fetch(`${API_BASE_URL}/shuffle`);
+    const response = await fetch(`${API_BASE_URL}/shuffle?mode=${mode}`);
     const data = await response.json();
     return data.cards;
   } catch (error) {
     console.error('获取洗牌数据失败:', error);
     const fallbackCards = [];
-    for (let i = 1; i <= 8; i++) {
+    const pairs = CARD_PAIRS[mode] || 8;
+    for (let i = 1; i <= pairs; i++) {
       fallbackCards.push(i, i);
     }
     for (let i = fallbackCards.length - 1; i > 0; i--) {
@@ -161,11 +187,11 @@ function checkMatch() {
       card1.classList.add('matched');
       card2.classList.add('matched');
       matchedPairs++;
-      matchedEl.textContent = `${matchedPairs}/8`;
+      matchedEl.textContent = `${matchedPairs}/${currentCardPairs}`;
       flippedCards = [];
       isProcessing = false;
       
-      if (matchedPairs === 8) {
+      if (matchedPairs === currentCardPairs) {
         endGame();
       }
     }, 500);
@@ -198,8 +224,10 @@ function endGame() {
   clearInterval(timer);
   timer = null;
   
+  finalModeEl.textContent = MODE_NAMES[currentMode];
   finalTimeEl.textContent = timerEl.textContent;
   finalMovesEl.textContent = moves;
+  finalRankEl.textContent = '--';
   
   newAchievementsSection.classList.add('hidden');
   newAchievementsList.innerHTML = '';
@@ -241,13 +269,16 @@ async function submitScore() {
       body: JSON.stringify({
         time: timeInSeconds,
         moves: moves,
-        playerName: playerName
+        playerName: playerName,
+        mode: currentMode
       })
     });
 
     const data = await response.json();
     
     if (data.success) {
+      finalRankEl.textContent = data.rank > 10 ? `第 ${data.rank} 名` : (data.rank > 0 ? `第 ${data.rank} 名` : '未上榜');
+      
       if (data.newAchievements && data.newAchievements.length > 0) {
         newAchievementsList.innerHTML = '';
         data.newAchievements.forEach((achievement, index) => {
@@ -272,8 +303,9 @@ async function submitScore() {
 }
 
 async function showLeaderboard() {
+  const mode = leaderboardModeSelect.value;
   try {
-    const response = await fetch(`${API_BASE_URL}/leaderboard`);
+    const response = await fetch(`${API_BASE_URL}/leaderboard?mode=${mode}`);
     const data = await response.json();
     renderLeaderboard(data.leaderboard);
   } catch (error) {
@@ -297,13 +329,14 @@ function renderLeaderboard(leaderboard) {
     li.className = 'rank-item';
     
     const timeStr = formatTime(entry.time);
+    const modeText = entry.mode ? ` [${MODE_NAMES[entry.mode] || entry.mode}]` : '';
     
     li.innerHTML = `
       <span class="rank-name">
         <span class="rank">#${index + 1}</span>
-        <span class="name">${entry.playerName}</span>
+        <span class="name">${entry.playerName}${modeText}</span>
       </span>
-      <span class="time">${timeStr}</span>
+      <span class="time">${timeStr} · ${entry.moves}步</span>
     `;
     
     leaderboardList.appendChild(li);
@@ -330,8 +363,13 @@ async function searchProfile() {
     const data = await response.json();
     
     statTotalGames.textContent = data.stats.totalGames;
-    statBestTime.textContent = data.stats.bestTime ? formatTime(data.stats.bestTime) : '--';
-    statBestMoves.textContent = data.stats.bestMoves || '--';
+    statHardGames.textContent = data.stats.hardGames || 0;
+    statDailyStreak.textContent = `${data.stats.dailyStreak || 0}天`;
+    
+    statBestNormal.textContent = data.stats.bestTime.normal ? `${formatTime(data.stats.bestTime.normal)} · ${data.stats.bestMoves.normal}步` : '--';
+    statBestHard.textContent = data.stats.bestTime.hard ? `${formatTime(data.stats.bestTime.hard)} · ${data.stats.bestMoves.hard}步` : '--';
+    statBestDaily.textContent = data.stats.bestTime.daily ? `${formatTime(data.stats.bestTime.daily)} · ${data.stats.bestMoves.daily}步` : '--';
+    
     profileStats.classList.remove('hidden');
     
     profileAchievementsList.innerHTML = '';
@@ -357,7 +395,10 @@ playAgainBtn.addEventListener('click', () => {
   winModal.classList.add('hidden');
   initGame();
 });
-leaderboardBtn.addEventListener('click', showLeaderboard);
+leaderboardBtn.addEventListener('click', () => {
+  leaderboardModeSelect.value = currentMode;
+  showLeaderboard();
+});
 closeLeaderboardBtn.addEventListener('click', () => {
   leaderboardModal.classList.add('hidden');
 });
@@ -372,5 +413,7 @@ profilePlayerNameInput.addEventListener('keypress', (e) => {
     searchProfile();
   }
 });
+leaderboardModeSelect.addEventListener('change', showLeaderboard);
+gameModeSelect.addEventListener('change', initGame);
 
 initGame();

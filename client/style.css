@@ -30,6 +30,44 @@ h1 {
   font-size: 2em;
 }
 
+.mode-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.mode-selector label {
+  font-weight: 500;
+  color: #333;
+}
+
+.mode-select {
+  padding: 8px 16px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 1em;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.mode-select:hover {
+  border-color: #764ba2;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.mode-select:focus {
+  border-color: #764ba2;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
 .game-info {
   display: flex;
   justify-content: space-around;
@@ -63,6 +101,15 @@ h1 {
   gap: 10px;
   margin-bottom: 20px;
   perspective: 1000px;
+}
+
+.game-board.hard-mode {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.game-board.hard-mode .card-face {
+  font-size: 1.8em;
 }
 
 .card {
@@ -407,9 +454,22 @@ h1 {
     font-size: 2em;
   }
 
+  .game-board.hard-mode .card-face {
+    font-size: 1.2em;
+  }
+
   .game-info {
     flex-direction: column;
     gap: 10px;
+  }
+
+  .mode-selector {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mode-select {
+    width: 100%;
   }
 
   .stats-grid {
