@@ -30,6 +30,7 @@
     <div class="controls">
       <button id="restartBtn" class="btn btn-primary">🔄 重新开始</button>
       <button id="leaderboardBtn" class="btn btn-secondary">🏆 排行榜</button>
+      <button id="profileBtn" class="btn btn-secondary">👤 个人档案</button>
     </div>
 
     <div id="winModal" class="modal hidden">
@@ -37,6 +38,10 @@
         <h2>🎉 恭喜通关！</h2>
         <p>你的成绩：<span id="finalTime">00:00</span></p>
         <p>总步数：<span id="finalMoves">0</span></p>
+        <div id="newAchievements" class="achievements-section hidden">
+          <h3>🏅 解锁新成就</h3>
+          <div id="newAchievementsList" class="achievements-list"></div>
+        </div>
         <div class="input-group">
           <label for="playerName">输入你的名字：</label>
           <input type="text" id="playerName" placeholder="匿名玩家" maxlength="10">
@@ -51,6 +56,39 @@
         <h2>🏆 排行榜</h2>
         <ol id="leaderboardList" class="leaderboard-list"></ol>
         <button id="closeLeaderboardBtn" class="btn btn-secondary">关闭</button>
+      </div>
+    </div>
+
+    <div id="profileModal" class="modal hidden">
+      <div class="modal-content profile-content">
+        <h2>👤 个人档案</h2>
+        <div class="input-group">
+          <label for="profilePlayerName">玩家名称：</label>
+          <input type="text" id="profilePlayerName" placeholder="输入玩家名" maxlength="10">
+          <button id="searchProfileBtn" class="btn btn-primary" style="margin-top: 10px;">查询</button>
+        </div>
+        <div id="profileStats" class="profile-stats hidden">
+          <h3>📊 游戏统计</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">总场次</span>
+              <span id="statTotalGames" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最佳用时</span>
+              <span id="statBestTime" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最少步数</span>
+              <span id="statBestMoves" class="stat-value">--</span>
+            </div>
+          </div>
+        </div>
+        <div id="profileAchievements" class="achievements-section hidden">
+          <h3>🏅 成就收藏 <span id="achievementCount" class="achievement-count"></span></h3>
+          <div id="profileAchievementsList" class="achievements-list"></div>
+        </div>
+        <button id="closeProfileBtn" class="btn btn-secondary">关闭</button>
       </div>
     </div>
   </div>

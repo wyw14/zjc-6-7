@@ -1,14 +1,14 @@
-﻿const API_BASE_URL = 'http://localhost:6036/api';
+const API_BASE_URL = 'http://localhost:6036/api';
 
 const CARD_EMOJIS = {
-  1: '馃惗',
-  2: '馃惐',
-  3: '馃惣',
-  4: '馃',
-  5: '馃',
-  6: '馃惛',
-  7: '馃惖',
-  8: '馃惃'
+  1: '🍎',
+  2: '🍊',
+  3: '🍋',
+  4: '🍇',
+  5: '🍓',
+  6: '🍒',
+  7: '🍑',
+  8: '🥝'
 };
 
 const gameBoard = document.getElementById('gameBoard');
@@ -17,15 +17,29 @@ const movesEl = document.getElementById('moves');
 const matchedEl = document.getElementById('matched');
 const restartBtn = document.getElementById('restartBtn');
 const leaderboardBtn = document.getElementById('leaderboardBtn');
+const profileBtn = document.getElementById('profileBtn');
 const winModal = document.getElementById('winModal');
 const leaderboardModal = document.getElementById('leaderboardModal');
+const profileModal = document.getElementById('profileModal');
 const finalTimeEl = document.getElementById('finalTime');
 const finalMovesEl = document.getElementById('finalMoves');
 const playerNameInput = document.getElementById('playerName');
 const submitScoreBtn = document.getElementById('submitScoreBtn');
 const playAgainBtn = document.getElementById('playAgainBtn');
 const closeLeaderboardBtn = document.getElementById('closeLeaderboardBtn');
+const closeProfileBtn = document.getElementById('closeProfileBtn');
 const leaderboardList = document.getElementById('leaderboardList');
+const newAchievementsSection = document.getElementById('newAchievements');
+const newAchievementsList = document.getElementById('newAchievementsList');
+const searchProfileBtn = document.getElementById('searchProfileBtn');
+const profilePlayerNameInput = document.getElementById('profilePlayerName');
+const profileStats = document.getElementById('profileStats');
+const statTotalGames = document.getElementById('statTotalGames');
+const statBestTime = document.getElementById('statBestTime');
+const statBestMoves = document.getElementById('statBestMoves');
+const profileAchievements = document.getElementById('profileAchievements');
+const profileAchievementsList = document.getElementById('profileAchievementsList');
+const achievementCount = document.getElementById('achievementCount');
 
 let cards = [];
 let flippedCards = [];
@@ -69,7 +83,7 @@ async function fetchShuffledCards() {
     const data = await response.json();
     return data.cards;
   } catch (error) {
-    console.error('鑾峰彇娲楃墝鏁版嵁澶辫触:', error);
+    console.error('获取洗牌数据失败:', error);
     const fallbackCards = [];
     for (let i = 1; i <= 8; i++) {
       fallbackCards.push(i, i);
@@ -94,7 +108,7 @@ function renderCards(cardIds) {
     
     const cardFront = document.createElement('div');
     cardFront.className = 'card-face card-front';
-    cardFront.textContent = CARD_EMOJIS[cardId] || '鉂?;
+    cardFront.textContent = CARD_EMOJIS[cardId] || '❓';
     
     card.appendChild(cardBack);
     card.appendChild(cardFront);
@@ -187,13 +201,35 @@ function endGame() {
   finalTimeEl.textContent = timerEl.textContent;
   finalMovesEl.textContent = moves;
   
+  newAchievementsSection.classList.add('hidden');
+  newAchievementsList.innerHTML = '';
+  
   setTimeout(() => {
     winModal.classList.remove('hidden');
   }, 500);
 }
 
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function createAchievementBadge(achievement, isLocked = false, animated = false) {
+  const badge = document.createElement('div');
+  badge.className = `achievement-badge${isLocked ? ' locked' : ''}${animated ? ' animated' : ''}`;
+  badge.innerHTML = `
+    <span class="achievement-icon">${achievement.icon}</span>
+    <div class="achievement-info">
+      <span class="achievement-name">${achievement.name}</span>
+      <span class="achievement-desc">${achievement.description}</span>
+    </div>
+  `;
+  return badge;
+}
+
 async function submitScore() {
-  const playerName = playerNameInput.value.trim() || '鍖垮悕鐜╁';
+  const playerName = playerNameInput.value.trim() || '匿名玩家';
   const timeInSeconds = Math.floor(elapsedTime / 1000);
 
   try {
@@ -204,6 +240,7 @@ async function submitScore() {
       },
       body: JSON.stringify({
         time: timeInSeconds,
+        moves: moves,
         playerName: playerName
       })
     });
@@ -211,13 +248,26 @@ async function submitScore() {
     const data = await response.json();
     
     if (data.success) {
-      alert(`鎭枩锛佷綘鎺掑悕绗?${data.rank} 鍚嶏紒`);
-      winModal.classList.add('hidden');
-      showLeaderboard();
+      if (data.newAchievements && data.newAchievements.length > 0) {
+        newAchievementsList.innerHTML = '';
+        data.newAchievements.forEach((achievement, index) => {
+          setTimeout(() => {
+            const badge = createAchievementBadge(achievement, false, true);
+            newAchievementsList.appendChild(badge);
+          }, index * 200);
+        });
+        newAchievementsSection.classList.remove('hidden');
+      }
+      
+      setTimeout(() => {
+        alert(`恭喜！你排名第 ${data.rank} 名！`);
+        winModal.classList.add('hidden');
+        showLeaderboard();
+      }, data.newAchievements && data.newAchievements.length > 0 ? data.newAchievements.length * 200 + 500 : 0);
     }
   } catch (error) {
-    console.error('鎻愪氦鎴愮哗澶辫触:', error);
-    alert('鎻愪氦鎴愮哗澶辫触锛岃绋嶅悗閲嶈瘯');
+    console.error('提交成绩失败:', error);
+    alert('提交成绩失败，请稍后重试');
   }
 }
 
@@ -227,8 +277,8 @@ async function showLeaderboard() {
     const data = await response.json();
     renderLeaderboard(data.leaderboard);
   } catch (error) {
-    console.error('鑾峰彇鎺掕姒滃け璐?', error);
-    leaderboardList.innerHTML = '<li>鍔犺浇鎺掕姒滃け璐?/li>';
+    console.error('获取排行榜失败:', error);
+    leaderboardList.innerHTML = '<li>加载排行榜失败</li>';
   }
   
   leaderboardModal.classList.remove('hidden');
@@ -236,7 +286,7 @@ async function showLeaderboard() {
 
 function renderLeaderboard(leaderboard) {
   if (!leaderboard || leaderboard.length === 0) {
-    leaderboardList.innerHTML = '<li class="empty-message">鏆傛棤璁板綍锛屽揩鏉ユ寫鎴樺惂锛?/li>';
+    leaderboardList.innerHTML = '<li class="empty-message">暂无记录，快来挑战吧！</li>';
     return;
   }
 
@@ -246,9 +296,7 @@ function renderLeaderboard(leaderboard) {
     const li = document.createElement('li');
     li.className = 'rank-item';
     
-    const minutes = Math.floor(entry.time / 60);
-    const seconds = entry.time % 60;
-    const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const timeStr = formatTime(entry.time);
     
     li.innerHTML = `
       <span class="rank-name">
@@ -262,6 +310,48 @@ function renderLeaderboard(leaderboard) {
   });
 }
 
+function showProfile() {
+  profilePlayerNameInput.value = '';
+  profileStats.classList.add('hidden');
+  profileAchievements.classList.add('hidden');
+  profileAchievementsList.innerHTML = '';
+  profileModal.classList.remove('hidden');
+}
+
+async function searchProfile() {
+  const playerName = profilePlayerNameInput.value.trim();
+  if (!playerName) {
+    alert('请输入玩家名称');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/player/${encodeURIComponent(playerName)}`);
+    const data = await response.json();
+    
+    statTotalGames.textContent = data.stats.totalGames;
+    statBestTime.textContent = data.stats.bestTime ? formatTime(data.stats.bestTime) : '--';
+    statBestMoves.textContent = data.stats.bestMoves || '--';
+    profileStats.classList.remove('hidden');
+    
+    profileAchievementsList.innerHTML = '';
+    const unlockedIds = new Set(data.achievements.map(a => a.id));
+    
+    achievementCount.textContent = `${data.achievements.length}/${data.allAchievements.length}`;
+    
+    data.allAchievements.forEach(achievement => {
+      const isUnlocked = unlockedIds.has(achievement.id);
+      const badge = createAchievementBadge(achievement, !isUnlocked);
+      profileAchievementsList.appendChild(badge);
+    });
+    
+    profileAchievements.classList.remove('hidden');
+  } catch (error) {
+    console.error('获取玩家信息失败:', error);
+    alert('获取玩家信息失败，请稍后重试');
+  }
+}
+
 restartBtn.addEventListener('click', initGame);
 playAgainBtn.addEventListener('click', () => {
   winModal.classList.add('hidden');
@@ -271,6 +361,16 @@ leaderboardBtn.addEventListener('click', showLeaderboard);
 closeLeaderboardBtn.addEventListener('click', () => {
   leaderboardModal.classList.add('hidden');
 });
+profileBtn.addEventListener('click', showProfile);
+closeProfileBtn.addEventListener('click', () => {
+  profileModal.classList.add('hidden');
+});
 submitScoreBtn.addEventListener('click', submitScore);
+searchProfileBtn.addEventListener('click', searchProfile);
+profilePlayerNameInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    searchProfile();
+  }
+});
 
 initGame();
